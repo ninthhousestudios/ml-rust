@@ -49,7 +49,11 @@ impl Matrix {
 
     /// An all-zeros matrix.
     pub fn zeros(rows: usize, cols: usize) -> Self {
-        Matrix { rows, cols, data: vec![0.0; rows * cols] }
+        Matrix {
+            rows,
+            cols,
+            data: vec![0.0; rows * cols],
+        }
     }
 
     /// Build from nested rows, e.g. `Matrix::from_rows(&[&[1.0, 2.0], &[3.0, 4.0]])`.
@@ -101,8 +105,53 @@ impl Matrix {
     ///   3. Triple loop over i, j, k accumulating the sum, then `set(i, j, sum)`.
     ///
     /// When `cargo test` goes green, the gate is cleared.
-    pub fn matmul(&self, _other: &Matrix) -> Matrix {
-        unimplemented!("Milestone 0: implement matmul — see the doc comment above")
+
+    // this is the naive implementation
+    /*
+    Right now, your loops are structured as R -> C -> K. Inside the innermost loop, you are calling
+    other.get(k, c).
+
+    If your matrix stores its data in a flat Vec row-by-row (Row-Major order, which is standard),
+    changing k while keeping c constant means you are jumping down columns in memory.
+
+    This causes CPU cache misses. The CPU wants to read continuous memory, but you are forcing it to
+    skip ahead by an entire row's length on every iteration of k.
+
+    */
+    // next, implement this new version that is more efficient
+    /*
+    The Fix: Swap the loops to R -> K -> C If you change the loop order, you can accumulate values
+    across a row of other continuously in memory. CPUs love this, and for larger matrices, this small
+    change can make your code 5x to 10x faster without changing the math logic.
+    */
+    pub fn matmul(&self, other: &Matrix) -> Matrix {
+        assert_eq!(self.cols, other.rows, "inner dimensions must be equal");
+        let mut out = Matrix::zeros(self.rows, other.cols);
+        for r in 0..self.rows {
+            for k in 0..self.cols {
+                for c in 0..other.cols {
+                    out.set(r, c, out.get(r, c) + (self.get(r, k) * other.get(k, c)));
+                }
+            }
+        }
+        out
+    }
+
+    pub fn matmul_naive(&self, other: &Matrix) -> Matrix {
+        assert_eq!(self.cols, other.rows, "inner dimensions must be equal");
+        let mut out = Matrix::zeros(self.rows, other.cols);
+        let mut sum: f64 = 0.0;
+        for r in 0..self.rows {
+            for c in 0..other.cols {
+                for k in 0..self.cols {
+                    // get value at (r,k) and (k,c), multiply these values, then add
+                    sum += self.get(r, k) * other.get(k, c);
+                }
+                out.set(r, c, sum);
+                sum = 0.0;
+            }
+        }
+        out
     }
 }
 
@@ -131,7 +180,10 @@ mod tests {
         let m = Matrix::from_rows(&[&[1.0, 2.0, 3.0], &[4.0, 5.0, 6.0]]);
         let t = m.transpose();
         assert_eq!((t.rows, t.cols), (3, 2));
-        assert_eq!(t, Matrix::from_rows(&[&[1.0, 4.0], &[2.0, 5.0], &[3.0, 6.0]]));
+        assert_eq!(
+            t,
+            Matrix::from_rows(&[&[1.0, 4.0], &[2.0, 5.0], &[3.0, 6.0]])
+        );
     }
 
     // --- The exercise. These fail until you implement `matmul`. ---
@@ -152,5 +204,23 @@ mod tests {
         let b = Matrix::from_rows(&[&[7.0, 8.0], &[9.0, 10.0], &[11.0, 12.0]]);
         let expected = Matrix::from_rows(&[&[58.0, 64.0], &[139.0, 154.0]]);
         assert_eq!(a.matmul(&b), expected);
+    }
+
+    #[test]
+    fn matmul_naive_identity_is_a_noop() {
+        let a = Matrix::from_rows(&[&[1.0, 2.0], &[3.0, 4.0]]);
+        let id = Matrix::from_rows(&[&[1.0, 0.0], &[0.0, 1.0]]);
+        assert_eq!(a.matmul_naive(&id), a);
+    }
+
+    #[test]
+    fn matmul_naive_known_product() {
+        // [1 2 3]   [ 7  8 ]   [ 58  64 ]
+        // [4 5 6] x [ 9 10 ] = [139 154]
+        //           [11 12]
+        let a = Matrix::from_rows(&[&[1.0, 2.0, 3.0], &[4.0, 5.0, 6.0]]);
+        let b = Matrix::from_rows(&[&[7.0, 8.0], &[9.0, 10.0], &[11.0, 12.0]]);
+        let expected = Matrix::from_rows(&[&[58.0, 64.0], &[139.0, 154.0]]);
+        assert_eq!(a.matmul_naive(&b), expected);
     }
 }
