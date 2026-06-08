@@ -113,7 +113,12 @@ pub fn mse(predictions: &Matrix, targets: &Matrix) -> f64 {
     assert_eq!(predictions.rows, targets.rows);
     assert_eq!(predictions.cols, 1);
     assert_eq!(targets.cols, 1);
-    unimplemented!("compute the mean of squared errors")
+    let n = predictions.rows;
+    let mut sum = 0.0;
+    for i in 0..n {
+        sum += (predictions.get(i,0)-targets.get(i,0)).powf(2.0);
+    }
+    sum / (n as f64)
 }
 
 /// Train a linear regression model using batch gradient descent.
@@ -144,8 +149,8 @@ pub fn mse(predictions: &Matrix, targets: &Matrix) -> f64 {
 pub fn fit(x: &Matrix, y: &Matrix, lr: f64, epochs: usize) -> LinearRegression {
     assert_eq!(x.rows, y.rows);
     assert_eq!(y.cols, 1);
-    let _n = x.rows as f64;
-    let _d = x.cols;
+    let n = x.rows as f64;
+    let d = x.cols;
 
     unimplemented!("implement batch gradient descent — derive the gradients first")
 }

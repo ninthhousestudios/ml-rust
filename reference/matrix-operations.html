@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Operations — ml-rust Reference</title>
+<style>
+  :root {
+    --bg: #fafaf8;
+    --fg: #1a1a1a;
+    --accent: #2563eb;
+    --border: #d4d4d4;
+    --code-bg: #f0f0ee;
+    --section-bg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --fg: #e4e4e4;
+      --accent: #60a5fa;
+      --border: #404040;
+      --code-bg: #2a2a2a;
+      --section-bg: #222222;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg);
+    color: var(--fg);
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.3rem;
+  }
+  h2 {
+    font-size: 1.2rem;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+  }
+  .subtitle {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 2rem;
+  }
+  pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.88rem;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.8rem 0;
+    border: 1px solid var(--border);
+  }
+  code { background: var(--code-bg); padding: 0.15rem 0.35rem; border-radius: 3px; }
+  .card {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin: 0.8rem 0;
+  }
+  .card h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8rem 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  th { font-weight: 600; }
+  .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    color: var(--accent);
+    margin: 0.4rem 0;
+  }
+  @media print {
+    body { max-width: 100%; margin: 0; padding: 1cm; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Matrix Operations</h1>
+<p class="subtitle">Quick reference for the ml-rust <code>Matrix</code> type</p>
+
+<h2>Storage: Row-Major</h2>
+<div class="card">
+  <p>A matrix is stored as a flat <code>Vec&lt;f64&gt;</code>, rows concatenated back-to-back.</p>
+<pre>[ a b c ]
+[ d e f ]   →   memory: [a, b, c, d, e, f]</pre>
+  <p class="formula">flat_index = r × cols + c</p>
+  <p>This is the single formula behind <code>get(r, c)</code> and <code>set(r, c, v)</code>.</p>
+</div>
+
+<h2>Constructors</h2>
+<table>
+  <tr><th>Method</th><th>Use</th></tr>
+  <tr><td><code>Matrix::new(rows, cols, data)</code></td><td>From flat vec (asserts length)</td></tr>
+  <tr><td><code>Matrix::zeros(rows, cols)</code></td><td>All-zeros matrix</td></tr>
+  <tr><td><code>Matrix::from_rows(&[&[...]])</code></td><td>From nested slices (tests, examples)</td></tr>
+</table>
+
+<h2>Element Access</h2>
+<table>
+  <tr><th>Method</th><th>Signature</th></tr>
+  <tr><td><code>get(r, c)</code></td><td><code>&self → f64</code></td></tr>
+  <tr><td><code>set(r, c, value)</code></td><td><code>&mut self → ()</code></td></tr>
+</table>
+
+<h2>Operations</h2>
+
+<div class="card">
+  <h3>Transpose</h3>
+  <p>Swap rows and columns: result(c, r) = original(r, c).</p>
+  <p>Shape: (m × n) → (n × m)</p>
+<pre>let t = m.transpose();</pre>
+</div>
+
+<div class="card">
+  <h3>Matrix Multiply</h3>
+  <p>Dot each row of <code>self</code> with each column of <code>other</code>.</p>
+  <p>Shape: (m × n) · (n × p) → (m × p). Inner dimensions must match.</p>
+  <p class="formula">result(i, j) = Σ_k  self(i, k) × other(k, j)</p>
+<pre>let c = a.matmul(&b);</pre>
+  <p><strong>Cache-friendly loop order:</strong> R → K → C (not R → C → K). Keeps access
+  to <code>other</code> sequential in memory.</p>
+</div>
+
+<div class="card">
+  <h3>Subtract</h3>
+  <p>Elementwise subtraction. Shapes must match.</p>
+<pre>let diff = a.subtract(&b);</pre>
+</div>
+
+<div class="card">
+  <h3>Scalar Multiply</h3>
+  <p>Multiply every element by a scalar.</p>
+<pre>let scaled = m.scamul(0.5);</pre>
+</div>
+
+<h2>Dimension Rules</h2>
+<table>
+  <tr><th>Operation</th><th>Requirement</th><th>Output shape</th></tr>
+  <tr><td>matmul(A, B)</td><td>A.cols == B.rows</td><td>(A.rows × B.cols)</td></tr>
+  <tr><td>subtract(A, B)</td><td>same shape</td><td>same shape</td></tr>
+  <tr><td>transpose(A)</td><td>any</td><td>(A.cols × A.rows)</td></tr>
+  <tr><td>scamul(A, s)</td><td>any</td><td>same shape</td></tr>
+</table>
+
+</body>
+</html>

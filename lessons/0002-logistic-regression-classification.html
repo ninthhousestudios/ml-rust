@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 2: Logistic Regression &amp; Classification</title>
+<style>
+  :root {
+    --bg: #fafaf8; --fg: #1a1a1a; --accent: #2563eb; --accent2: #7c3aed;
+    --border: #d4d4d4; --code-bg: #f0f0ee; --card-bg: #ffffff;
+    --success: #16a34a; --warn: #d97706; --dim: #6b7280;
+    --quiz-bg: #f0f7ff; --quiz-border: #bfdbfe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --fg: #e4e4e4; --accent: #60a5fa; --accent2: #a78bfa;
+      --border: #404040; --code-bg: #2a2a2a; --card-bg: #222;
+      --success: #4ade80; --warn: #fbbf24; --dim: #9ca3af;
+      --quiz-bg: #1e293b; --quiz-border: #334155;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 740px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.7;
+  }
+  h1 { font-size: 1.7rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.2rem; margin-bottom: 0.7rem; color: var(--accent); }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; margin-bottom: 0.5rem; }
+  .meta { font-size: 0.88rem; color: var(--dim); margin-bottom: 2rem; }
+  p { margin-bottom: 0.9rem; }
+  pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.88rem;
+  }
+  pre {
+    background: var(--code-bg); padding: 1rem; border-radius: 6px;
+    overflow-x: auto; margin: 0.8rem 0; border: 1px solid var(--border);
+  }
+  code { background: var(--code-bg); padding: 0.12rem 0.3rem; border-radius: 3px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.2rem; margin: 1rem 0;
+  }
+  .derivation {
+    border-left: 4px solid var(--accent2); background: var(--card-bg);
+    padding: 1.2rem 1.2rem 1.2rem 1.5rem; margin: 1rem 0; border-radius: 0 8px 8px 0;
+  }
+  .derivation h3 { color: var(--accent2); margin-top: 0; }
+  .formula {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+    margin: 0.6rem 0; padding: 0.5rem 0;
+  }
+  .intuition {
+    background: var(--quiz-bg); border: 1px solid var(--quiz-border);
+    border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0;
+  }
+  .intuition::before { content: "💡 "; }
+  .contrast {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;
+  }
+  .contrast > div {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem;
+  }
+  .contrast h4 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+  @media (max-width: 600px) { .contrast { grid-template-columns: 1fr; } }
+  a { color: var(--accent); }
+  .quiz {
+    background: var(--quiz-bg); border: 1px solid var(--quiz-border);
+    border-radius: 8px; padding: 1.2rem; margin: 1.2rem 0;
+  }
+  .quiz h3 { margin-top: 0; color: var(--accent); }
+  .quiz label { display: block; margin: 0.4rem 0; cursor: pointer; }
+  .quiz input[type="radio"] { margin-right: 0.5rem; }
+  .quiz .feedback {
+    display: none; margin-top: 0.8rem; padding: 0.7rem;
+    border-radius: 6px; font-size: 0.92rem;
+  }
+  .quiz .feedback.correct { background: #dcfce7; color: #166534; }
+  .quiz .feedback.wrong { background: #fee2e2; color: #991b1b; }
+  @media (prefers-color-scheme: dark) {
+    .quiz .feedback.correct { background: #14532d; color: #bbf7d0; }
+    .quiz .feedback.wrong { background: #450a0a; color: #fecaca; }
+  }
+  .quiz button {
+    margin-top: 0.6rem; padding: 0.4rem 1rem; border-radius: 5px;
+    border: 1px solid var(--accent); background: transparent; color: var(--accent);
+    cursor: pointer; font-size: 0.9rem;
+  }
+  .next-step {
+    border: 2px solid var(--success); border-radius: 8px; padding: 1.2rem; margin: 2rem 0;
+  }
+  .next-step h3 { color: var(--success); margin-top: 0; }
+  .cite { font-size: 0.85rem; color: var(--dim); }
+  .warning {
+    border: 1px solid var(--warn); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0;
+  }
+  .warning::before { content: "⚠ "; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  .graph-container {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem; margin: 1rem 0; text-align: center;
+  }
+  canvas { max-width: 100%; }
+  @media print {
+    body { max-width: 100%; margin: 0; padding: 1cm; }
+    .card, .derivation, .quiz, .next-step { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Logistic Regression &amp; Classification</h1>
+<p class="meta">Lesson 2 · Milestone 2 · Load-bearing derivation #2 · Reading ahead</p>
+
+<p>
+Linear regression predicts a <em>number</em>. But what if the answer is yes or no? Spam or not
+spam? Malignant or benign? You need a model that outputs a <em>probability</em> — a number between
+0 and 1 — and a loss function designed for that.
+</p>
+<p>
+Logistic regression is that model. It's linear regression with one crucial addition: a function
+that squashes the output into [0, 1]. That function is the <strong>sigmoid</strong>, and understanding
+it — and the loss function it demands — is your second load-bearing derivation.
+</p>
+
+<h2>From Lines to Probabilities</h2>
+
+<p>In linear regression, the model outputs:</p>
+<pre>z = w · x + b</pre>
+<p>This can be any real number: −∞ to +∞. That's fine for predicting house prices, but useless for
+"probability of spam." We need to <em>squash</em> z into [0, 1].</p>
+
+<h3>The Sigmoid Function</h3>
+
+<pre>σ(z) = 1 / (1 + e⁻ᶻ)</pre>
+
+<div class="graph-container">
+<canvas id="sigmoid-graph" width="500" height="250"></canvas>
+<p style="font-size: 0.85rem; color: var(--dim); margin-top: 0.4rem;">
+The sigmoid. Large positive z → 1, large negative z → 0, z = 0 → 0.5.</p>
+</div>
+
+<p>Key properties to internalise:</p>
+<div class="card">
+<ul style="margin-left: 1.2rem;">
+  <li><strong>Range is (0, 1)</strong> — it's always a valid probability.</li>
+  <li><strong>σ(0) = 0.5</strong> — the decision boundary. When the linear part
+  (w·x + b) is exactly 0, the model is maximally uncertain.</li>
+  <li><strong>Symmetric:</strong> σ(−z) = 1 − σ(z).</li>
+  <li><strong>Beautiful derivative:</strong> σ′(z) = σ(z) · (1 − σ(z)). You'll derive this below.
+  It means the gradient is largest at z = 0 (where the model is most uncertain) and vanishes
+  at the extremes (where it's already confident). This will matter a lot in neural nets.</li>
+</ul>
+</div>
+
+<p>So the full model is:</p>
+<pre>ŷ = σ(w · x + b) = σ(z)</pre>
+<p>We interpret ŷ as P(class = 1 | x). If ŷ > 0.5, predict class 1; otherwise class 0.</p>
+
+<p class="cite">For an interactive visualisation of sigmoid, see
+<a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank">3Blue1Brown's neural
+networks series</a>, which uses sigmoid in the activation function context.
+<a href="https://mml-book.github.io/book/mml-book.pdf" target="_blank">MML Book</a> §12.2.2
+covers the sigmoid in detail.</p>
+
+<h2>Why Not MSE?</h2>
+
+<p>You might think: just use MSE like before. Predictions are numbers, targets are 0 or 1,
+minimise the squared difference. <strong>This is a trap.</strong></p>
+
+<div class="contrast">
+<div>
+  <h4>MSE for Classification</h4>
+  <p>When the model outputs 0.99 for a true positive, the MSE gradient is tiny:
+  2·(0.99 − 1)·σ′(z) ≈ 0. The model is right and barely updates — fine.</p>
+  <p>But when the model outputs 0.01 for a true positive (badly wrong), the MSE gradient is
+  <em>also</em> tiny: 2·(0.01 − 1)·σ′(z) where σ′(z) ≈ 0 because z is very negative.
+  <strong>The model is wrong and still barely updates.</strong></p>
+</div>
+<div>
+  <h4>The Problem</h4>
+  <p>MSE + sigmoid creates a <strong>non-convex</strong> loss surface with flat regions where the
+  gradient nearly vanishes — even though the model is making confident, wrong predictions.</p>
+  <p>Gradient descent gets stuck in these flat regions. You need a loss function that screams louder
+  the more confidently wrong you are.</p>
+</div>
+</div>
+
+<h2>Cross-Entropy Loss</h2>
+
+<p>The right loss function for classification is <strong>binary cross-entropy</strong>
+(also called log loss):</p>
+
+<pre>L = −(1/n) Σ [ y_i · log(ŷ_i) + (1 − y_i) · log(1 − ŷ_i) ]</pre>
+
+<p>Parse it piece by piece:</p>
+
+<div class="card">
+<ul style="margin-left: 1.2rem;">
+  <li>When y<sub>i</sub> = 1 (positive class): only the <code>log(ŷ_i)</code> term survives.
+  If ŷ ≈ 1, log(1) = 0 → no penalty. If ŷ ≈ 0, log(0) → −∞ → <strong>infinite penalty</strong>.</li>
+  <li>When y<sub>i</sub> = 0 (negative class): only the <code>log(1 − ŷ_i)</code> term survives.
+  If ŷ ≈ 0, log(1) = 0 → no penalty. If ŷ ≈ 1, log(0) → −∞ → <strong>infinite penalty</strong>.</li>
+  <li>The negative sign flips it so we're <em>minimising</em> (logs of probabilities are negative).</li>
+</ul>
+</div>
+
+<div class="intuition">
+Cross-entropy penalises confident wrong answers <em>exponentially</em> more than tentative ones.
+A prediction of 0.51 for a true 1 costs almost nothing. A prediction of 0.01 for a true 1
+costs enormously. This is exactly the property MSE was missing.
+</div>
+
+<p class="cite">The information-theoretic derivation of cross-entropy (why logs, specifically) is in
+<a href="https://mml-book.github.io/book/mml-book.pdf" target="_blank">MML Book</a> §6.6.
+For the practical ML perspective, see
+<a href="https://www.youtube.com/playlist?list=PLoROMvodv4rMiGQp3WXShtMGgzqpfVfbU" target="_blank">
+CS229 Lecture 3</a>.</p>
+
+<h2>Load-Bearing Derivation #2</h2>
+
+<p>Two things to derive: the sigmoid's derivative (needed for the chain rule), and the gradient
+of cross-entropy loss with respect to the weights.</p>
+
+<div class="derivation">
+<h3>Part A: Derivative of the Sigmoid</h3>
+<p>Start from σ(z) = 1/(1 + e⁻ᶻ) = (1 + e⁻ᶻ)⁻¹. Apply the chain rule:</p>
+<pre>σ'(z) = −(1 + e⁻ᶻ)⁻² · (−e⁻ᶻ)
+      = e⁻ᶻ / (1 + e⁻ᶻ)²</pre>
+<p>Now the trick: rewrite e⁻ᶻ/(1 + e⁻ᶻ)² by noting that:</p>
+<pre>σ(z) = 1/(1 + e⁻ᶻ)
+1 − σ(z) = e⁻ᶻ/(1 + e⁻ᶻ)</pre>
+<p>So:</p>
+<pre>σ'(z) = σ(z) · (1 − σ(z))</pre>
+<p>Elegant. The derivative of the sigmoid is expressed entirely in terms of itself. This makes
+backpropagation cheap: if you've already computed σ(z) during the forward pass, you get the
+derivative for free.</p>
+</div>
+
+<div class="derivation">
+<h3>Part B: Gradient of Cross-Entropy w.r.t. w</h3>
+<p>For one sample, the loss is:</p>
+<pre>ℓ = −[ y·log(σ(z)) + (1−y)·log(1 − σ(z)) ]</pre>
+<p>where z = w·x + b. We want ∂ℓ/∂w. Chain rule: ∂ℓ/∂w = ∂ℓ/∂σ · ∂σ/∂z · ∂z/∂w.</p>
+
+<p><strong>∂ℓ/∂σ</strong> (how loss changes with the prediction):</p>
+<pre>∂ℓ/∂σ = −[ y/σ − (1−y)/(1−σ) ]
+       = −[ y/σ − (1−y)/(1−σ) ]</pre>
+
+<p><strong>∂σ/∂z</strong> (sigmoid derivative, from Part A):</p>
+<pre>∂σ/∂z = σ(1 − σ)</pre>
+
+<p><strong>∂z/∂w</strong> (same as linear regression):</p>
+<pre>∂z/∂w = x</pre>
+
+<p>Multiply them together:</p>
+<pre>∂ℓ/∂w = −[ y/σ − (1−y)/(1−σ) ] · σ(1−σ) · x</pre>
+
+<p>Now watch the cancellation. Expand the bracket:</p>
+<pre>= −[ y(1−σ) − (1−y)σ ] · x
+= −[ y − yσ − σ + yσ ] · x
+= −[ y − σ ] · x
+= (σ − y) · x
+= (ŷ − y) · x</pre>
+
+<p>Over all samples:</p>
+<pre>∂L/∂w = (1/n) Σ (ŷ_i − y_i) · x_i</pre>
+</div>
+
+<div class="warning">
+Look at that result. The gradient of cross-entropy loss for logistic regression is
+<code>(1/n) Σ (ŷ − y) · x</code> — <strong>almost identical to linear regression's gradient</strong>
+(minus the factor of 2). The sigmoid and the log-loss were designed to cancel each other's
+complexity. This is not a coincidence; it's a consequence of choosing the "natural" loss function
+for the sigmoid (its canonical link function, in statistics language). The update rule is the same
+shape: <code>w ← w − lr · (1/n) · Xᵀ · (ŷ − y)</code>.
+</div>
+
+<h2>The Decision Boundary</h2>
+
+<p>The model predicts class 1 when ŷ > 0.5, i.e. when σ(z) > 0.5, i.e. when z > 0:</p>
+
+<pre>w · x + b > 0     →    predict class 1
+w · x + b < 0     →    predict class 0
+w · x + b = 0     →    the decision boundary</pre>
+
+<p>In 2D (two features), <code>w₁x₁ + w₂x₂ + b = 0</code> is a <em>line</em>. In 3D, a plane.
+In general, a hyperplane. The weight vector <strong>w</strong> is perpendicular to this boundary —
+it points toward the "class 1" side. The bias <em>b</em> shifts the boundary away from the origin.
+</p>
+
+<div class="intuition">
+Training logistic regression is finding the hyperplane that best separates the two classes.
+Gradient descent nudges the plane's orientation (w) and position (b) until the cross-entropy
+loss is minimised. The decision boundary is where the model is exactly 50/50 uncertain.
+</div>
+
+<h2>Evaluation: Beyond Accuracy</h2>
+
+<p>This is where <strong>precision</strong> and <strong>recall</strong> enter — concepts woven
+through Milestones 1–3.</p>
+
+<div class="contrast">
+<div>
+  <h4>Precision</h4>
+  <p>"Of everything I called positive, how many actually were?"</p>
+  <pre>TP / (TP + FP)</pre>
+  <p>High precision = few false alarms.</p>
+</div>
+<div>
+  <h4>Recall</h4>
+  <p>"Of everything that was actually positive, how many did I catch?"</p>
+  <pre>TP / (TP + FN)</pre>
+  <p>High recall = few missed cases.</p>
+</div>
+</div>
+
+<p>There's usually a tension: raising the classification threshold (say from 0.5 to 0.8) increases
+precision but decreases recall. Which matters more depends on the problem — spam filters optimise
+for precision (don't delete real email), medical screening optimises for recall (don't miss
+a cancer).</p>
+
+<p>Also introduced here: <strong>train/test split</strong>. If you evaluate on the same data you
+trained on, you're measuring memorisation, not generalisation. Split your data, train on one part,
+evaluate on the other. We'll build this into the code scaffold for Milestone 2.</p>
+
+<hr>
+
+<h2>Check Your Understanding</h2>
+
+<div class="quiz" id="q1">
+<h3>Question 1</h3>
+<p>Why does σ'(z) = σ(z)·(1 − σ(z)) mean the gradient is largest at the decision boundary?</p>
+<label><input type="radio" name="q1" value="a"> Because σ(0) = 0.5, so σ·(1−σ) = 0.25, the maximum of the product</label>
+<label><input type="radio" name="q1" value="b"> Because the model is always wrong at the boundary</label>
+<label><input type="radio" name="q1" value="c"> Because log(0.5) is a large number</label>
+<button onclick="checkQuiz('q1','a',
+  'Right. σ·(1−σ) is maximised when σ = 0.5 (at z = 0, the decision boundary). Away from the boundary, one of the factors approaches 0 and the product shrinks. So the model updates most where it\'s most uncertain.',
+  'Think about when the product p·(1−p) is largest for p ∈ (0,1).')">
+  Check</button>
+<div class="feedback" id="q1-feedback"></div>
+</div>
+
+<div class="quiz" id="q2">
+<h3>Question 2</h3>
+<p>The cross-entropy gradient simplifies to (ŷ − y)·x — the same form as linear regression.
+Why is this significant?</p>
+<label><input type="radio" name="q2" value="a"> It means logistic and linear regression are the same algorithm</label>
+<label><input type="radio" name="q2" value="b"> It means the implementation of the training loop barely changes — swap the prediction function and loss, keep the same gradient update shape</label>
+<label><input type="radio" name="q2" value="c"> It's a coincidence with no practical implication</label>
+<button onclick="checkQuiz('q2','b',
+  'Exactly. The code for the gradient descent loop is almost identical. You swap in σ(z) for the prediction and cross-entropy for the loss, but the weight update uses the same Xᵀ·errors pattern. This is why the Matrix infrastructure from Milestone 0 and the fit() pattern from Milestone 1 transfer directly.',
+  'Think about what changes in the code between linear and logistic regression\'s training loop.')">
+  Check</button>
+<div class="feedback" id="q2-feedback"></div>
+</div>
+
+<div class="quiz" id="q3">
+<h3>Question 3</h3>
+<p>A medical test classifier has 95% accuracy on a dataset where only 5% of patients have the
+disease. Is this model useful?</p>
+<label><input type="radio" name="q3" value="a"> Yes, 95% is excellent</label>
+<label><input type="radio" name="q3" value="b"> Not necessarily — a model that always predicts "healthy" would also get 95% accuracy</label>
+<label><input type="radio" name="q3" value="c"> No, because it should be 100%</label>
+<button onclick="checkQuiz('q3','b',
+  'Right. This is why accuracy alone is misleading for imbalanced classes. A trivial \'always predict negative\' model gets 95% accuracy here but catches zero diseases (recall = 0). You need precision and recall to see the real picture.',
+  'Think about what happens if the model just predicts the majority class every time.')">
+  Check</button>
+<div class="feedback" id="q3-feedback"></div>
+</div>
+
+<hr>
+
+<div class="next-step">
+<h3>What's Next</h3>
+<p>This is a read-ahead lesson — the code scaffold for Milestone 2 will be built after you
+complete Milestone 1 (linear regression). When you get there, the exercise will be:</p>
+<ol style="margin: 0.5rem 0 0 1.5rem;">
+  <li>Implement <code>sigmoid(z)</code></li>
+  <li>Implement <code>cross_entropy_loss(predictions, targets)</code></li>
+  <li>Implement <code>fit()</code> for logistic regression — same gradient descent loop shape as
+  linreg, different prediction and loss</li>
+  <li>Add a <code>train_test_split()</code> utility</li>
+  <li>Train a binary classifier on a synthetic 2D dataset and explain the decision boundary</li>
+</ol>
+<p>Derive the sigmoid derivative and cross-entropy gradient on paper <em>before</em> you code.
+You already know the chain rule from Milestone 1 — this is the same muscle, different function.</p>
+<p style="margin-top: 0.8rem; color: var(--dim);">If something's unclear, ask — that's what the
+agent is for.</p>
+</div>
+
+<script>
+function checkQuiz(id, correct, rightMsg, wrongMsg) {
+  const selected = document.querySelector(`input[name="${id}"]:checked`);
+  const fb = document.getElementById(`${id}-feedback`);
+  if (!selected) return;
+  fb.style.display = 'block';
+  if (selected.value === correct) {
+    fb.className = 'feedback correct';
+    fb.textContent = rightMsg;
+  } else {
+    fb.className = 'feedback wrong';
+    fb.textContent = wrongMsg;
+  }
+}
+
+// Draw sigmoid curve
+const canvas = document.getElementById('sigmoid-graph');
+if (canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const pad = 40;
+
+  // Background
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--code-bg').trim();
+  ctx.fillRect(0, 0, w, h);
+
+  // Axes
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--dim').trim();
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, h - pad); ctx.lineTo(w - pad, h - pad); // x-axis
+  ctx.moveTo(w/2, pad); ctx.lineTo(w/2, h - pad); // y-axis
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+  ctx.font = '12px JetBrains Mono, Consolas, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('−6', pad + 10, h - pad + 15);
+  ctx.fillText('0', w/2, h - pad + 15);
+  ctx.fillText('6', w - pad - 10, h - pad + 15);
+  ctx.fillText('z', w - pad + 15, h - pad + 5);
+  ctx.textAlign = 'right';
+  ctx.fillText('1', w/2 - 8, pad + 5);
+  ctx.fillText('0.5', w/2 - 8, h/2 + 4);
+  ctx.fillText('0', w/2 - 8, h - pad + 4);
+
+  // 0.5 dashed line
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+  ctx.beginPath();
+  ctx.moveTo(pad, h/2); ctx.lineTo(w - pad, h/2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Sigmoid curve
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  const xRange = 12; // -6 to 6
+  for (let px = pad; px <= w - pad; px++) {
+    const z = ((px - pad) / (w - 2*pad)) * xRange - xRange/2;
+    const sigma = 1 / (1 + Math.exp(-z));
+    const py = h - pad - sigma * (h - 2*pad);
+    if (px === pad) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Mark (0, 0.5)
+  const cx = w/2, cy = h/2;
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, 2*Math.PI);
+  ctx.fill();
+}
+</script>
+
+</body>
+</html>

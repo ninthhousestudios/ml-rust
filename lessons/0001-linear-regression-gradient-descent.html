@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 1: Linear Regression &amp; Gradient Descent</title>
+<style>
+  :root {
+    --bg: #fafaf8; --fg: #1a1a1a; --accent: #2563eb; --accent2: #7c3aed;
+    --border: #d4d4d4; --code-bg: #f0f0ee; --card-bg: #ffffff;
+    --success: #16a34a; --warn: #d97706; --dim: #6b7280;
+    --quiz-bg: #f0f7ff; --quiz-border: #bfdbfe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --fg: #e4e4e4; --accent: #60a5fa; --accent2: #a78bfa;
+      --border: #404040; --code-bg: #2a2a2a; --card-bg: #222;
+      --success: #4ade80; --warn: #fbbf24; --dim: #9ca3af;
+      --quiz-bg: #1e293b; --quiz-border: #334155;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 740px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.7;
+  }
+  h1 { font-size: 1.7rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.2rem; margin-bottom: 0.7rem; color: var(--accent); }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; margin-bottom: 0.5rem; }
+  .meta { font-size: 0.88rem; color: var(--dim); margin-bottom: 2rem; }
+  p { margin-bottom: 0.9rem; }
+  pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.88rem;
+  }
+  pre {
+    background: var(--code-bg); padding: 1rem; border-radius: 6px;
+    overflow-x: auto; margin: 0.8rem 0; border: 1px solid var(--border);
+  }
+  code { background: var(--code-bg); padding: 0.12rem 0.3rem; border-radius: 3px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.2rem; margin: 1rem 0;
+  }
+  .derivation {
+    border-left: 4px solid var(--accent2); background: var(--card-bg);
+    padding: 1.2rem 1.2rem 1.2rem 1.5rem; margin: 1rem 0; border-radius: 0 8px 8px 0;
+  }
+  .derivation h3 { color: var(--accent2); margin-top: 0; }
+  .key { color: var(--accent); font-weight: 600; }
+  .formula {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+    margin: 0.6rem 0; padding: 0.5rem 0;
+  }
+  .intuition {
+    background: var(--quiz-bg); border: 1px solid var(--quiz-border);
+    border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0;
+  }
+  .intuition::before { content: "💡 "; }
+  a { color: var(--accent); }
+  .quiz {
+    background: var(--quiz-bg); border: 1px solid var(--quiz-border);
+    border-radius: 8px; padding: 1.2rem; margin: 1.2rem 0;
+  }
+  .quiz h3 { margin-top: 0; color: var(--accent); }
+  .quiz label { display: block; margin: 0.4rem 0; cursor: pointer; }
+  .quiz input[type="radio"] { margin-right: 0.5rem; }
+  .quiz .feedback {
+    display: none; margin-top: 0.8rem; padding: 0.7rem;
+    border-radius: 6px; font-size: 0.92rem;
+  }
+  .quiz .feedback.correct { background: #dcfce7; color: #166534; }
+  .quiz .feedback.wrong { background: #fee2e2; color: #991b1b; }
+  @media (prefers-color-scheme: dark) {
+    .quiz .feedback.correct { background: #14532d; color: #bbf7d0; }
+    .quiz .feedback.wrong { background: #450a0a; color: #fecaca; }
+  }
+  .quiz button {
+    margin-top: 0.6rem; padding: 0.4rem 1rem; border-radius: 5px;
+    border: 1px solid var(--accent); background: transparent; color: var(--accent);
+    cursor: pointer; font-size: 0.9rem;
+  }
+  .next-step {
+    border: 2px solid var(--success); border-radius: 8px; padding: 1.2rem; margin: 2rem 0;
+  }
+  .next-step h3 { color: var(--success); margin-top: 0; }
+  .cite { font-size: 0.85rem; color: var(--dim); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  @media print {
+    body { max-width: 100%; margin: 0; padding: 1cm; }
+    .card, .derivation, .quiz, .next-step { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Linear Regression &amp; Gradient Descent</h1>
+<p class="meta">Lesson 1 · Milestone 1 · Load-bearing derivation #1</p>
+
+<p>
+You have a bunch of data points. You suspect there's a line hiding in them. Linear regression
+finds that line — but the interesting part isn't <em>that</em> it finds the line, it's <em>how</em>:
+by defining "wrong" as a number, then walking downhill on the wrongness surface until you reach
+the bottom.
+</p>
+<p>
+That walking-downhill process is <strong>gradient descent</strong>, and it's the engine underneath
+nearly everything else in this curriculum — neural nets, transformers, all of it. This is where
+you learn to trust it.
+</p>
+
+<h2>The Setup</h2>
+
+<p>Given <em>n</em> data points (x<sub>i</sub>, y<sub>i</sub>), we want to find weight <em>w</em>
+and bias <em>b</em> such that:</p>
+
+<pre>ŷ_i = w · x_i + b</pre>
+
+<p>predicts y<sub>i</sub> as closely as possible. With multiple features (a vector
+<strong>x</strong><sub>i</sub> of dimension <em>d</em>), this generalises to:</p>
+
+<pre>ŷ = X · w + b</pre>
+
+<p>where X is (n × d), w is (d × 1), and b is broadcast to every row. This is why you built
+<code>Matrix</code> first — the prediction step is a single <code>matmul</code>.
+</p>
+
+<h2>Measuring Wrongness: MSE</h2>
+
+<p>We need a single number that says "how wrong are all our predictions collectively."
+<strong>Mean Squared Error</strong> does this:</p>
+
+<pre>MSE = (1/n) Σ (ŷ_i − y_i)²</pre>
+
+<p>Why squared? Two reasons that matter:</p>
+<ol style="margin: 0.5rem 0 0.9rem 1.5rem;">
+  <li><strong>Positive errors and negative errors don't cancel out.</strong> If you overshoot by 5
+  and undershoot by 5, absolute error says 0 average. Squaring keeps both.</li>
+  <li><strong>It's smooth and differentiable everywhere</strong>, which means we can take its
+  derivative — and that derivative is what gradient descent needs.</li>
+</ol>
+
+<p class="cite">For more on loss function choices, see
+<a href="https://cs229.stanford.edu/" target="_blank">CS229 Lecture 2</a> (Andrew Ng)
+or <a href="https://mml-book.github.io/book/mml-book.pdf" target="_blank">MML Book</a> §8.1.</p>
+
+<h2>The Core Idea: Walking Downhill</h2>
+
+<p>Think of MSE as a <strong>surface</strong>. Each possible value of (w, b) is a point on this
+surface, and the height at that point is the loss. We want to find the bottom — the (w, b) with
+the lowest loss.</p>
+
+<p>Gradient descent is simple: wherever you're standing, figure out which direction is downhill,
+take a step that way, repeat.</p>
+
+<div class="intuition">
+The gradient ∇MSE tells you the direction of <em>steepest ascent</em>. So you walk the
+<em>opposite</em> direction: <code>w ← w − lr · ∂MSE/∂w</code>. The learning rate <code>lr</code>
+controls your step size.
+</div>
+
+<p>The only question is: what <em>is</em> the gradient? That's the derivation.</p>
+
+<h2>Load-Bearing Derivation #1</h2>
+
+<p>This is the one you need to own with pen and paper. The result isn't hard, but <em>doing it</em>
+yourself is what makes gradient descent feel mechanical rather than magical.</p>
+
+<div class="derivation">
+<h3>Step 1: Write MSE as a function of w</h3>
+<p>Start with one feature (1D). Predictions are ŷ<sub>i</sub> = w·x<sub>i</sub> + b. Substituting
+into MSE:</p>
+<pre>MSE(w, b) = (1/n) Σ (w·x_i + b − y_i)²</pre>
+<p>Let's call the error e<sub>i</sub> = ŷ<sub>i</sub> − y<sub>i</sub> = w·x<sub>i</sub> + b − y<sub>i</sub>.</p>
+</div>
+
+<div class="derivation">
+<h3>Step 2: Differentiate with respect to w</h3>
+<p>Apply the chain rule to each term in the sum. The outer function is (·)², the inner function
+is e<sub>i</sub> = w·x<sub>i</sub> + b − y<sub>i</sub>:</p>
+<pre>∂MSE/∂w = (1/n) Σ  2 · e_i · ∂e_i/∂w
+         = (1/n) Σ  2 · e_i · x_i          ← because ∂(w·x_i + b − y_i)/∂w = x_i
+         = (2/n) Σ  (ŷ_i − y_i) · x_i</pre>
+<p>The <em>x<sub>i</sub></em> factor is the key insight: the gradient of the loss with respect to
+a weight is <em>scaled by the input</em>. Features with larger values contribute more to the
+gradient. This will come back in neural nets.</p>
+</div>
+
+<div class="derivation">
+<h3>Step 3: Differentiate with respect to b</h3>
+<p>Same chain rule, but ∂e<sub>i</sub>/∂b = 1 (bias doesn't scale with input):</p>
+<pre>∂MSE/∂b = (2/n) Σ (ŷ_i − y_i)</pre>
+<p>Just the average error, scaled by 2. Simpler because the bias shifts everything uniformly.</p>
+</div>
+
+<div class="derivation">
+<h3>Step 4: The update rule</h3>
+<pre>w ← w − lr · ∂MSE/∂w
+b ← b − lr · ∂MSE/∂b</pre>
+<p>Subtract because we want to go <em>downhill</em> (opposite the gradient).
+<code>lr</code> (learning rate) controls step size — too big and you overshoot, too small and
+you crawl.</p>
+</div>
+
+<h2>Matrix Form</h2>
+
+<p>With <em>d</em> features, you have <em>d</em> weights. The per-feature gradient derivation is
+the same, but we can express the whole thing as one matrix operation:</p>
+
+<div class="card">
+<pre>predictions = X · w + b           (n × 1)
+errors      = predictions − y     (n × 1)
+∂MSE/∂w     = (2/n) · Xᵀ · errors (d × 1)
+∂MSE/∂b     = (2/n) · sum(errors)  (scalar)</pre>
+
+<p>That <code>Xᵀ · errors</code> is doing all the per-feature gradient accumulation in one matmul.
+Each row of Xᵀ is one feature across all samples; dotting it with the errors vector gives you that
+feature's total gradient contribution. This is why the <code>Matrix</code> type and
+<code>transpose()</code> were Milestone 0.</p>
+</div>
+
+<p class="cite">Ng derives this matrix form in
+<a href="https://www.youtube.com/playlist?list=PLoROMvodv4rMiGQp3WXShtMGgzqpfVfbU" target="_blank">
+CS229 Lecture 2</a>. For the geometric view of gradient descent, see
+<a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank">3Blue1Brown's gradient
+descent video</a>.</p>
+
+<h2>A Note on the 2</h2>
+
+<p>The factor of 2 in (2/n) comes from the power rule on (·)². Many implementations drop it
+— they define MSE as <code>(1/2n) Σ (...)²</code> instead, so the 2 cancels. It doesn't matter:
+the learning rate absorbs the constant. Keep it or drop it, as long as you're consistent.
+The scaffold code keeps it.</p>
+
+<hr>
+
+<h2>Check Your Understanding</h2>
+
+<div class="quiz" id="q1">
+<h3>Question 1</h3>
+<p>If ∂MSE/∂w is positive, what does the update rule do to w?</p>
+<label><input type="radio" name="q1" value="a"> Increases w</label>
+<label><input type="radio" name="q1" value="b"> Decreases w</label>
+<label><input type="radio" name="q1" value="c"> Depends on the learning rate sign</label>
+<button onclick="checkQuiz('q1','b',
+  'Right — w ← w − lr·(positive) makes w smaller. The gradient points uphill; we go the other way.',
+  'Not quite. The update is w ← w − lr·∂MSE/∂w. If the gradient is positive, we subtract a positive number.')">
+  Check</button>
+<div class="feedback" id="q1-feedback"></div>
+</div>
+
+<div class="quiz" id="q2">
+<h3>Question 2</h3>
+<p>Why does ∂MSE/∂w contain an x<sub>i</sub> factor but ∂MSE/∂b does not?</p>
+<label><input type="radio" name="q2" value="a"> Because b is always smaller than w</label>
+<label><input type="radio" name="q2" value="b"> Because ∂(w·x_i + b − y_i)/∂w = x_i, but ∂(…)/∂b = 1</label>
+<label><input type="radio" name="q2" value="c"> Because b doesn't affect the loss</label>
+<button onclick="checkQuiz('q2','b',
+  'Exactly. It falls straight out of the chain rule. The weight multiplies x, so x appears in its derivative. The bias just adds, so its derivative is 1.',
+  'Think about what happens when you differentiate w·x_i + b − y_i with respect to w versus b.')">
+  Check</button>
+<div class="feedback" id="q2-feedback"></div>
+</div>
+
+<div class="quiz" id="q3">
+<h3>Question 3</h3>
+<p>In the matrix form, <code>Xᵀ · errors</code> produces a (d × 1) vector. What does the
+j-th element of this vector represent?</p>
+<label><input type="radio" name="q3" value="a"> The prediction error for the j-th sample</label>
+<label><input type="radio" name="q3" value="b"> The total gradient contribution of the j-th feature across all samples</label>
+<label><input type="radio" name="q3" value="c"> The j-th weight's current value</label>
+<button onclick="checkQuiz('q3','b',
+  'Right. Row j of Xᵀ contains feature j\'s value for every sample. Dotting it with the errors sums up how much feature j contributed to each error — that\'s the gradient for weight j.',
+  'Think about what Xᵀ looks like: its rows are features, its columns are samples. Dotting a row with the errors vector sums across samples.')">
+  Check</button>
+<div class="feedback" id="q3-feedback"></div>
+</div>
+
+<hr>
+
+<div class="next-step">
+<h3>Now Build It</h3>
+<p>The code scaffold is in <code>crates/linreg/src/lib.rs</code>. Two exercises:</p>
+<ol style="margin: 0.5rem 0 0 1.5rem;">
+  <li><code>mse()</code> — straightforward, warm-up. You may have done this already.</li>
+  <li><code>fit()</code> — the gradient descent loop. This is the real exercise.
+  You have <code>subtract()</code> and <code>scamul()</code> on Matrix, plus
+  <code>transpose()</code> and <code>matmul()</code>. That's everything you need.</li>
+</ol>
+<p>Read <code>crates/linreg/exercise.md</code> for hints. The gate: <code>cargo test -p linreg</code>
+all green, and you can explain why the gradient points where it does.</p>
+<p style="margin-top: 0.8rem; color: var(--dim);">If something's unclear, ask — that's what the
+agent is for.</p>
+</div>
+
+<script>
+function checkQuiz(id, correct, rightMsg, wrongMsg) {
+  const selected = document.querySelector(`input[name="${id}"]:checked`);
+  const fb = document.getElementById(`${id}-feedback`);
+  if (!selected) return;
+  fb.style.display = 'block';
+  if (selected.value === correct) {
+    fb.className = 'feedback correct';
+    fb.textContent = rightMsg;
+  } else {
+    fb.className = 'feedback wrong';
+    fb.textContent = wrongMsg;
+  }
+}
+</script>
+
+</body>
+</html>

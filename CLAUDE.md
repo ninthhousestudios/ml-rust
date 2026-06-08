@@ -36,12 +36,35 @@ something like `ml next` or `ml check`. Then:
 | What | Where |
 |------|-------|
 | The curriculum: arc, milestones, gates (stable map) | `docs/ml-learning-program.md` |
+| Why Josh is learning this, success criteria | `MISSION.md` |
 | Live status, next-up, resume pointer | yojana project `ml-rust` (handoff + task graph) |
 | The code and Josh's builds | `crates/` |
+| Trusted external sources | `RESOURCES.md` |
+| What Josh has demonstrated understanding of | `learning-records/*.md` |
+| Compressed cheat sheets for quick lookup | `reference/*.html` |
+| Standalone conceptual/math lessons | `lessons/*.html` |
+| Learning preferences and working notes | `NOTES.md` |
 
 Do **not** track progress in the doc — that's yojana's job, kept single-source to avoid rot.
 **Create yojana tasks just-in-time** — only the current milestone (and maybe the next), freshly
 scaffolded with concrete acceptance criteria. Do not stamp out all 11 milestones; stale stubs rot.
+
+## Teaching artifacts
+
+This repo follows the [teach skill](~/soft/mp-skills/skills/productivity/teach/SKILL.md) structure.
+When scaffolding a new milestone or completing one:
+
+- **Learning records:** when Josh demonstrates genuine understanding of something non-trivial (not
+  just exposure), write a learning record in `learning-records/NNNN-slug.md`. These drive zone-of-
+  proximal-development decisions. See the format files in the skill directory.
+- **Reference docs:** after a milestone, update or create `reference/*.html` with the compressed
+  takeaways — the things Josh would want to look up later. These should be beautiful, printable.
+- **Lessons:** standalone HTML files in `lessons/*.html` for conceptual/mathematical teaching.
+  The hybrid model: lessons teach the concept, code scaffolds provide the hands-on exercise.
+  Cite resources from `RESOURCES.md` — don't teach from parametric knowledge alone.
+- **Resources:** when drawing on external material, add it to `RESOURCES.md` with annotation.
+  Keep the Gaps section honest.
+- **NOTES.md:** record learning preferences and working notes as they surface.
 
 ## Content rules
 

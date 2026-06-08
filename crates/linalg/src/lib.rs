@@ -79,6 +79,28 @@ impl Matrix {
         self.data[r * self.cols + c] = value;
     }
 
+    pub fn subtract(&self, other: &Matrix) -> Matrix {
+        assert_eq!(self.rows,other.rows,"matrices must have the same number of rows");
+        assert_eq!(self.cols,other.cols,"matrices must have the same number of columns");
+        let mut out = Matrix::zeros(self.rows,self.cols);
+        for r in 0..self.rows {
+            for c in 0..self.cols {
+                out.set(r,c,self.get(r,c) - other.get(r,c));
+            }
+        }
+        out
+    }
+
+    pub fn scamul(&self, scalar: f64) -> Matrix {
+        let mut out = Matrix::zeros(self.rows,self.cols);
+        for r in 0..self.rows {
+            for c in 0..self.cols {
+                out.set(r,c, self.get(r,c)*scalar);
+            }
+        }
+        out
+    }
+
     /// Transpose: the (r, c) of the result is the (c, r) of the original. A worked example of
     /// using the indexing formula — read it, then write `matmul` in the same spirit.
     pub fn transpose(&self) -> Matrix {
