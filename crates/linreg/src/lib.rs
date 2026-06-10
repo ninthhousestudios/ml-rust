@@ -99,6 +99,11 @@ impl LinearRegression {
         }
         preds
     }
+
+    pub fn update(&mut self, new_weights: Matrix, new_bias: f64) {
+        self.weights = new_weights;
+        self.bias = new_bias;
+    }
 }
 
 /// Compute Mean Squared Error between predictions and targets.
@@ -116,7 +121,7 @@ pub fn mse(predictions: &Matrix, targets: &Matrix) -> f64 {
     let n = predictions.rows;
     let mut sum = 0.0;
     for i in 0..n {
-        sum += (predictions.get(i,0)-targets.get(i,0)).powf(2.0);
+        sum += (predictions.get(i, 0) - targets.get(i, 0)).powf(2.0);
     }
     sum / (n as f64)
 }
@@ -146,13 +151,61 @@ pub fn mse(predictions: &Matrix, targets: &Matrix) -> f64 {
 /// Hint: you'll need to add elementwise subtraction and scalar multiplication to your Matrix
 /// type — or do the arithmetic element-by-element with get/set. Either works; adding the ops
 /// to Matrix is cleaner but not required for the gate.
+/// x: nxn y: nx1 w:nx1
 pub fn fit(x: &Matrix, y: &Matrix, lr: f64, epochs: usize) -> LinearRegression {
     assert_eq!(x.rows, y.rows);
     assert_eq!(y.cols, 1);
     let n = x.rows as f64;
-    let d = x.cols;
+    let _d = x.cols;
+    let mut linreg: LinearRegression = LinearRegression {
+        weights: Matrix::zeros(x.cols, 1),
+        bias: 0.0,
+    };
+    let xt = x.transpose();
 
-    unimplemented!("implement batch gradient descent — derive the gradients first")
+    for _ in 0..epochs {
+        let pred: Matrix = linreg.predict(&x);
+        let errors = pred.subtract(&y);
+        let dw = xt.matmul(&errors).scamul(2.0 / n);
+        let db = (2.0 / n) * sum_e(&errors);
+        linreg.update(
+            linreg.weights.subtract(&dw.scamul(lr)),
+            linreg.bias - lr * db,
+        );
+    }
+    linreg
+}
+pub fn fit_naive(x: &Matrix, y: &Matrix, lr: f64, epochs: usize) -> LinearRegression {
+    assert_eq!(x.rows, y.rows);
+    assert_eq!(y.cols, 1);
+    let n = x.rows as f64;
+    let _d = x.cols;
+    let mut w = Matrix::zeros(x.cols, 1);
+    let mut b: f64 = 0.0;
+    let xt = x.transpose();
+
+    for _ in 0..epochs {
+        let mut pred: Matrix = x.matmul(&w);
+        pred.broadcast(b);
+        let errors = pred.subtract(&y);
+        let dw = xt.matmul(&errors).scamul(2.0 / n);
+        let db = (2.0 / n) * sum_e(&errors);
+        w = w.subtract(&dw.scamul(lr));
+        b = b - lr * db;
+    }
+    LinearRegression {
+        weights: w,
+        bias: b,
+    }
+}
+
+fn sum_e(e: &Matrix) -> f64 {
+    assert_eq!(e.cols, 1, "errors should only have 1 column");
+    let mut sum: f64 = 0.0;
+    for r in 0..e.rows {
+        sum += e.get(r, 0);
+    }
+    sum
 }
 
 #[cfg(test)]
@@ -190,14 +243,8 @@ mod tests {
 
         let w = model.weights.get(0, 0);
         let b = model.bias;
-        assert!(
-            (w - 3.0).abs() < 0.1,
-            "expected weight ≈ 3.0, got {w}"
-        );
-        assert!(
-            (b - 1.0).abs() < 0.5,
-            "expected bias ≈ 1.0, got {b}"
-        );
+        assert!((w - 3.0).abs() < 0.1, "expected weight ≈ 3.0, got {w}");
+        assert!((b - 1.0).abs() < 0.5, "expected bias ≈ 1.0, got {b}");
     }
 
     #[test]
@@ -242,17 +289,8 @@ mod tests {
         let w0 = model.weights.get(0, 0);
         let w1 = model.weights.get(1, 0);
         let b = model.bias;
-        assert!(
-            (w0 - 2.0).abs() < 0.3,
-            "expected w0 ≈ 2.0, got {w0}"
-        );
-        assert!(
-            (w1 - 3.0).abs() < 0.3,
-            "expected w1 ≈ 3.0, got {w1}"
-        );
-        assert!(
-            (b - 1.0).abs() < 0.5,
-            "expected bias ≈ 1.0, got {b}"
-        );
+        assert!((w0 - 2.0).abs() < 0.3, "expected w0 ≈ 2.0, got {w0}");
+        assert!((w1 - 3.0).abs() < 0.3, "expected w1 ≈ 3.0, got {w1}");
+        assert!((b - 1.0).abs() < 0.5, "expected bias ≈ 1.0, got {b}");
     }
 }

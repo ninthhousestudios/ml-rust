@@ -80,25 +80,40 @@ impl Matrix {
     }
 
     pub fn subtract(&self, other: &Matrix) -> Matrix {
-        assert_eq!(self.rows,other.rows,"matrices must have the same number of rows");
-        assert_eq!(self.cols,other.cols,"matrices must have the same number of columns");
-        let mut out = Matrix::zeros(self.rows,self.cols);
+        assert_eq!(
+            self.rows, other.rows,
+            "matrices must have the same number of rows"
+        );
+        assert_eq!(
+            self.cols, other.cols,
+            "matrices must have the same number of columns"
+        );
+        let mut out = Matrix::zeros(self.rows, self.cols);
         for r in 0..self.rows {
             for c in 0..self.cols {
-                out.set(r,c,self.get(r,c) - other.get(r,c));
+                out.set(r, c, self.get(r, c) - other.get(r, c));
             }
         }
         out
     }
 
     pub fn scamul(&self, scalar: f64) -> Matrix {
-        let mut out = Matrix::zeros(self.rows,self.cols);
+        let mut out = Matrix::zeros(self.rows, self.cols);
         for r in 0..self.rows {
             for c in 0..self.cols {
-                out.set(r,c, self.get(r,c)*scalar);
+                out.set(r, c, self.get(r, c) * scalar);
             }
         }
         out
+    }
+
+    // broadcast bias b to each row of self
+    pub fn broadcast(&mut self, bias: f64) {
+        for r in 0..self.rows {
+            for c in 0..self.cols {
+                self.set(r, c, self.get(r, c) + bias);
+            }
+        }
     }
 
     /// Transpose: the (r, c) of the result is the (c, r) of the original. A worked example of
