@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 3: Decision Trees &amp; the ML Landscape</title>
+<style>
+  :root {
+    --bg: #fafaf8; --fg: #1a1a1a; --accent: #2563eb; --accent2: #7c3aed;
+    --border: #d4d4d4; --code-bg: #f0f0ee; --card-bg: #ffffff;
+    --success: #16a34a; --warn: #d97706; --dim: #6b7280;
+    --quiz-bg: #f0f7ff; --quiz-border: #bfdbfe;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --fg: #e4e4e4; --accent: #60a5fa; --accent2: #a78bfa;
+      --border: #404040; --code-bg: #2a2a2a; --card-bg: #222;
+      --success: #4ade80; --warn: #fbbf24; --dim: #9ca3af;
+      --quiz-bg: #1e293b; --quiz-border: #334155;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 740px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.7;
+  }
+  h1 { font-size: 1.7rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.3rem; margin-top: 2.2rem; margin-bottom: 0.7rem; color: var(--accent); }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; margin-bottom: 0.5rem; }
+  .meta { font-size: 0.88rem; color: var(--dim); margin-bottom: 2rem; }
+  p { margin-bottom: 0.9rem; }
+  pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.88rem;
+  }
+  pre {
+    background: var(--code-bg); padding: 1rem; border-radius: 6px;
+    overflow-x: auto; margin: 0.8rem 0; border: 1px solid var(--border);
+  }
+  code { background: var(--code-bg); padding: 0.12rem 0.3rem; border-radius: 3px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.2rem; margin: 1rem 0;
+  }
+  .derivation {
+    border-left: 4px solid var(--accent2); background: var(--card-bg);
+    padding: 1.2rem 1.2rem 1.2rem 1.5rem; margin: 1rem 0; border-radius: 0 8px 8px 0;
+  }
+  .derivation h3 { color: var(--accent2); margin-top: 0; }
+  .formula {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
+    margin: 0.6rem 0; padding: 0.5rem 0;
+  }
+  .intuition {
+    background: var(--quiz-bg); border: 1px solid var(--quiz-border);
+    border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0;
+  }
+  .intuition::before { content: "Intuition: "; font-weight: bold; color: var(--accent); }
+  .contrast {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;
+  }
+  .contrast > div {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem;
+  }
+  .contrast h4 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+  @media (max-width: 600px) { .contrast { grid-template-columns: 1fr; } }
+  a { color: var(--accent); }
+  .quiz {
+    background: var(--quiz-bg); border: 1px solid var(--quiz-border);
+    border-radius: 8px; padding: 1.2rem; margin: 1.2rem 0;
+  }
+  .quiz h3 { margin-top: 0; color: var(--accent); }
+  .quiz label { display: block; margin: 0.4rem 0; cursor: pointer; }
+  .quiz input[type="radio"] { margin-right: 0.5rem; }
+  .quiz .feedback {
+    display: none; margin-top: 0.8rem; padding: 0.7rem;
+    border-radius: 6px; font-size: 0.92rem;
+  }
+  .quiz .feedback.correct { background: #dcfce7; color: #166534; }
+  .quiz .feedback.wrong { background: #fee2e2; color: #991b1b; }
+  @media (prefers-color-scheme: dark) {
+    .quiz .feedback.correct { background: #14532d; color: #bbf7d0; }
+    .quiz .feedback.wrong { background: #450a0a; color: #fecaca; }
+  }
+  .quiz button {
+    margin-top: 0.6rem; padding: 0.4rem 1rem; border-radius: 5px;
+    border: 1px solid var(--accent); background: transparent; color: var(--accent);
+    cursor: pointer; font-size: 0.9rem;
+  }
+  .next-step {
+    border: 2px solid var(--success); border-radius: 8px; padding: 1.2rem; margin: 2rem 0;
+  }
+  .next-step h3 { color: var(--success); margin-top: 0; }
+  .cite { font-size: 0.85rem; color: var(--dim); }
+  .warning {
+    border: 1px solid var(--warn); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0;
+  }
+  .warning::before { content: "Key insight: "; font-weight: bold; color: var(--warn); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 0.8rem 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  .tree-diagram {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.5rem; margin: 1rem 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+    white-space: pre; line-height: 1.4; overflow-x: auto;
+  }
+  ol, ul { margin: 0.5rem 0 0.9rem 1.5rem; }
+  li { margin-bottom: 0.3rem; }
+  @media print {
+    body { max-width: 100%; margin: 0; padding: 1cm; }
+    .card, .derivation, .quiz, .next-step { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Decision Trees &amp; the ML Landscape</h1>
+<p class="meta">Lesson 3 &middot; Milestone 3 &middot; Phase 1 completion &middot; No load-bearing derivation (recognize level)</p>
+
+<p>
+You've now built two models — linear regression and logistic regression — both powered by
+the same engine: <strong>gradient descent</strong>. Compute a differentiable loss, take
+its gradient, nudge the weights downhill. It's elegant, and it works.
+</p>
+<p>
+But it has assumptions. Gradient descent needs a differentiable loss function, continuous
+parameters, and a model whose decision boundary is a hyperplane (or at least something you
+can parameterize smoothly). What happens when those assumptions don't hold?
+</p>
+
+<div class="warning">
+This milestone's gate question: <strong>when should you NOT reach for gradient descent?</strong>
+By the end, you should have a mental decision tree (pun intended) for picking the right tool.
+</div>
+
+<h2>Entropy: Measuring Disorder</h2>
+
+<p>Before we can build a decision tree, we need a way to measure how "mixed up" a set of
+labels is. That measure is <strong>entropy</strong>, borrowed from information theory.</p>
+
+<pre>H(S) = &minus;&Sigma; p_i &middot; log&sub2;(p_i)</pre>
+
+<p>where p<sub>i</sub> is the proportion of class i in the set S.</p>
+
+<div class="card">
+<h3>What entropy means</h3>
+<ul>
+  <li><strong>H = 0</strong> &mdash; the set is <em>pure</em>. All labels are the same class.
+  No uncertainty: you already know the answer.</li>
+  <li><strong>H = 1.0</strong> &mdash; maximum uncertainty for binary classification (50/50 split).
+  You have no idea which class a random element belongs to.</li>
+  <li><strong>0 &lt; H &lt; 1</strong> &mdash; somewhere in between. The more skewed the
+  distribution, the lower the entropy.</li>
+</ul>
+<p style="margin-top: 0.6rem;">Convention: 0 &middot; log<sub>2</sub>(0) = 0. A class with zero
+probability contributes nothing to entropy. (The limit of p&middot;log(p) as p&rarr;0 is 0.)</p>
+</div>
+
+<h3>Worked example</h3>
+
+<p>Consider a dataset of 6 temperature readings and whether they're "comfortable":</p>
+
+<table>
+<tr><th>temp</th><th>comfortable?</th></tr>
+<tr><td>10</td><td>0</td></tr>
+<tr><td>15</td><td>0</td></tr>
+<tr><td>20</td><td>1</td></tr>
+<tr><td>25</td><td>1</td></tr>
+<tr><td>30</td><td>1</td></tr>
+<tr><td>35</td><td>0</td></tr>
+</table>
+
+<p>The full set has 3 zeros and 3 ones. The proportions are p<sub>0</sub> = 3/6 = 0.5 and
+p<sub>1</sub> = 3/6 = 0.5.</p>
+
+<pre>H(parent) = &minus;(0.5 &middot; log&sub2;(0.5) + 0.5 &middot; log&sub2;(0.5))
+           = &minus;(0.5 &middot; (&minus;1) + 0.5 &middot; (&minus;1))
+           = 1.0</pre>
+
+<p>Maximum entropy &mdash; the labels are perfectly mixed.</p>
+
+<p>Now consider just the labels [0, 0, 0, 1] (75% zeros, 25% ones):</p>
+
+<pre>H = &minus;(0.75 &middot; log&sub2;(0.75) + 0.25 &middot; log&sub2;(0.25))
+  = &minus;(0.75 &middot; (&minus;0.415) + 0.25 &middot; (&minus;2.0))
+  = &minus;(&minus;0.311 + (&minus;0.5))
+  = 0.811</pre>
+
+<p>Lower than 1.0 &mdash; the set is skewed toward class 0, so there's less uncertainty.</p>
+
+<div class="intuition">
+Entropy answers: "how many yes/no questions would I need to ask, on average, to determine
+a random element's class?" A pure set needs 0 questions. A 50/50 set needs exactly 1.
+</div>
+
+<p class="cite">The information-theoretic foundation of entropy is in
+<a href="https://mml-book.github.io/book/mml-book.pdf" target="_blank">MML Book</a> &sect;6.1.
+For the ML application, see
+<a href="https://www.youtube.com/playlist?list=PLoROMvodv4rMiGQp3WXShtMGgzqpfVfbU" target="_blank">
+CS229 Lecture 10</a> (decision trees).</p>
+
+<h2>Information Gain: How Trees Decide</h2>
+
+<p>A decision tree splits data to <em>reduce entropy</em>. The metric for how good a split is
+is called <strong>information gain</strong> (IG):</p>
+
+<pre>IG = H(parent) &minus; (|left|/|total|) &middot; H(left) &minus; (|right|/|total|) &middot; H(right)</pre>
+
+<p>It measures how much entropy decreases after splitting. Higher IG = better split.
+The tree algorithm tries every possible split and picks the one with highest IG.</p>
+
+<h3>Worked example: choosing a split</h3>
+
+<p>Using our temperature data, let's compare two candidate thresholds:</p>
+
+<div class="derivation">
+<h3>Split A: temp &le; 17.5</h3>
+<p>Left (temp &le; 17.5): rows with temp 10, 15 &rarr; labels [0, 0] &rarr; <strong>H = 0</strong> (pure!)</p>
+<p>Right (temp &gt; 17.5): rows with temp 20, 25, 30, 35 &rarr; labels [1, 1, 1, 0]</p>
+<pre>H(right) = &minus;(0.75 &middot; log&sub2;(0.75) + 0.25 &middot; log&sub2;(0.25)) = 0.811</pre>
+<pre>IG = 1.0 &minus; (2/6) &middot; 0 &minus; (4/6) &middot; 0.811
+   = 1.0 &minus; 0 &minus; 0.541
+   = <strong>0.459</strong></pre>
+</div>
+
+<div class="derivation">
+<h3>Split B: temp &le; 22.5</h3>
+<p>Left: temp 10, 15, 20 &rarr; labels [0, 0, 1] &rarr; H = 0.918</p>
+<p>Right: temp 25, 30, 35 &rarr; labels [1, 1, 0] &rarr; H = 0.918</p>
+<pre>IG = 1.0 &minus; (3/6) &middot; 0.918 &minus; (3/6) &middot; 0.918
+   = 1.0 &minus; 0.918
+   = <strong>0.082</strong></pre>
+</div>
+
+<p><strong>Split A wins</strong> (IG = 0.459 vs 0.082). It cleanly separates the cold
+temperatures (pure class 0) from the rest. The tree picks this split first.</p>
+
+<p>Now the right subtree [1, 1, 1, 0] still has entropy 0.811. We recurse and split again
+at <strong>temp &le; 32.5</strong>:</p>
+<ul>
+  <li>Left: [1, 1, 1] &rarr; H = 0 (pure)</li>
+  <li>Right: [0] &rarr; H = 0 (pure)</li>
+  <li>IG = 0.811 (all entropy eliminated)</li>
+</ul>
+
+<p>The final tree, depth 2:</p>
+
+<div class="tree-diagram">            temp &le; 17.5?
+           /            \
+      class = 0      temp &le; 32.5?
+                     /            \
+                class = 1      class = 0</div>
+
+<p>This tree captures a <strong>non-monotonic</strong> relationship: comfortable temperatures
+are in the middle range [20, 30]. Logistic regression could never learn this &mdash; it can only
+draw a single boundary, meaning "everything above threshold X is class 1." The real boundary
+here requires two cuts.</p>
+
+<div class="warning">
+This is the central insight of this milestone. Gradient descent finds a hyperplane (one linear
+boundary). Decision trees carve out arbitrary rectangular regions via recursive splits. When the
+real decision surface is non-linear, non-monotonic, or axis-aligned, a decision tree wins.
+</div>
+
+<h2>The CART Algorithm</h2>
+
+<p>CART (Classification and Regression Trees) is the algorithm you'll implement. Here's the
+procedure in pseudocode:</p>
+
+<div class="card">
+<pre style="background: transparent; border: none; padding: 0; margin: 0;">
+function build_tree(data, labels, depth, max_depth):
+    if all labels are the same class:
+        return Leaf(that class)
+    if depth >= max_depth:
+        return Leaf(majority class)
+
+    best_ig = 0
+    best_feature = None
+    best_threshold = None
+
+    for each feature f:
+        values = sorted unique values of f in current data
+        for each pair of adjacent values (v1, v2):
+            threshold = (v1 + v2) / 2
+            left_labels  = labels where data[f] <= threshold
+            right_labels = labels where data[f] >  threshold
+
+            ig = information_gain(labels, left_labels, right_labels)
+            if ig > best_ig:
+                best_ig, best_feature, best_threshold = ig, f, threshold
+
+    if best_ig == 0:
+        return Leaf(majority class)
+
+    split data into left_data and right_data using best split
+    left_child  = build_tree(left_data, left_labels, depth + 1, max_depth)
+    right_child = build_tree(right_data, right_labels, depth + 1, max_depth)
+    return Split(best_feature, best_threshold, left_child, right_child)</pre>
+</div>
+
+<h3>Key implementation details</h3>
+<ul>
+  <li><strong>Candidate thresholds:</strong> midpoints between sorted unique values. For values
+  [0, 1, 4, 5], the candidates are 0.5, 2.5, 4.5.</li>
+  <li><strong>Row indices:</strong> rather than copying matrices, pass around a <code>&amp;[usize]</code>
+  of which rows belong to this node. Use <code>x.get(row, feature)</code> to access values.</li>
+  <li><strong>Majority class:</strong> when creating a leaf at max depth, count which class
+  appears more often in the remaining rows.</li>
+  <li><strong>Recursion in Rust:</strong> <code>fit()</code> sets up the initial call with all
+  row indices and depth 0. A helper function (free function or method) does the recursion,
+  returning <code>Node</code> and wrapping children in <code>Box::new()</code>.</li>
+</ul>
+
+<h2>Overfitting and Depth Control</h2>
+
+<p>A decision tree with no depth limit will keep splitting until every leaf is pure &mdash;
+even if that means one leaf per training point. This is <strong>overfitting</strong>: the tree
+memorises the training data instead of learning general patterns.</p>
+
+<div class="contrast">
+<div>
+  <h4>Underfitting (too shallow)</h4>
+  <p>max_depth = 1: only one split. Can't capture complex boundaries.
+  Both train and test accuracy are low.</p>
+</div>
+<div>
+  <h4>Overfitting (too deep)</h4>
+  <p>No depth limit: one leaf per point. Train accuracy = 100%, but test accuracy drops
+  because the tree learned noise.</p>
+</div>
+</div>
+
+<p><code>max_depth</code> is a <strong>hyperparameter</strong> &mdash; you choose it, not the
+algorithm. Finding the right value is part of model selection (often via cross-validation,
+covered below).</p>
+
+<hr>
+
+<h2>The ML Landscape: Beyond Gradient Descent and Trees</h2>
+
+<p>Milestone 3 asks you to <em>recognize</em> four more algorithms. You won't implement
+these, but you should know what they do and when you'd reach for them.</p>
+
+<div class="card">
+<h3>k-Nearest Neighbors (k-NN)</h3>
+<p><strong>How:</strong> to classify a new point, find the k closest training points and take
+a majority vote. No training at all &mdash; all work happens at prediction time.</p>
+<p><strong>When:</strong> small datasets, similarity-based problems, or as a baseline.
+Bad for large datasets (must compare against every training point) and high-dimensional
+data (distances become meaningless &mdash; the "curse of dimensionality").</p>
+</div>
+
+<div class="card">
+<h3>k-Means Clustering</h3>
+<p><strong>How:</strong> partition data into k clusters by iteratively assigning points to their
+nearest centroid, then recomputing centroids. Unsupervised &mdash; no labels needed.</p>
+<p><strong>When:</strong> you have no labels and want to find natural groups. Common for customer
+segmentation, image compression, or as a preprocessing step. You choose k, which requires
+judgment (elbow method, silhouette score).</p>
+</div>
+
+<div class="card">
+<h3>PCA (Principal Component Analysis)</h3>
+<p><strong>How:</strong> find the directions of maximum variance in the data via eigenvalue
+decomposition. Project the data onto the top-k principal components, discarding the rest.
+Not a classifier &mdash; a dimensionality reduction technique.</p>
+<p><strong>When:</strong> too many features (reduce before feeding to another model), or for
+visualisation (project 100D data to 2D for plotting). Linear only &mdash; misses non-linear
+structure. Often a preprocessing step, not a model itself.</p>
+</div>
+
+<div class="card">
+<h3>SVM (Support Vector Machine)</h3>
+<p><strong>How:</strong> find the hyperplane that separates classes with the <em>maximum margin</em>
+(largest gap between the boundary and the nearest points on each side). The "support vectors"
+are the critical points touching the margin. The <strong>kernel trick</strong> allows SVMs to
+find non-linear boundaries by implicitly mapping to higher-dimensional space.</p>
+<p><strong>When:</strong> binary classification with a clear margin, small-to-medium datasets,
+especially in high dimensions. SVMs were the go-to before deep learning; they're still strong
+for specific problems. Less interpretable than trees, more so than neural nets.</p>
+</div>
+
+<p class="cite">CS229 covers all four: k-NN informally in early lectures, k-means in
+<a href="https://www.youtube.com/playlist?list=PLoROMvodv4rMiGQp3WXShtMGgzqpfVfbU" target="_blank">
+Lecture 12</a>, PCA in Lecture 14, SVMs in Lectures 6&ndash;7. The
+<a href="https://mml-book.github.io/book/mml-book.pdf" target="_blank">MML Book</a> covers
+PCA rigorously in &sect;10 and SVMs in &sect;12.2.</p>
+
+<hr>
+
+<h2>Model Evaluation Toolkit</h2>
+
+<p>This section completes the evaluation thread woven through Milestones 1&ndash;3. You
+implemented <code>accuracy</code> in logreg; now add the tools to know whether that accuracy
+number actually means anything.</p>
+
+<h3>The Confusion Matrix</h3>
+
+<table>
+<tr><th></th><th>Actual Positive (1)</th><th>Actual Negative (0)</th></tr>
+<tr><th>Predicted Positive (1)</th><td><strong>TP</strong> (true positive)</td><td><strong>FP</strong> (false positive)</td></tr>
+<tr><th>Predicted Negative (0)</th><td><strong>FN</strong> (false negative)</td><td><strong>TN</strong> (true negative)</td></tr>
+</table>
+
+<p>Everything else derives from these four counts:</p>
+<ul>
+  <li><strong>Accuracy</strong> = (TP + TN) / total</li>
+  <li><strong>Precision</strong> = TP / (TP + FP) &mdash; "of my positive predictions, how many were right?"</li>
+  <li><strong>Recall</strong> = TP / (TP + FN) &mdash; "of the actual positives, how many did I find?"</li>
+</ul>
+
+<h3>Train/Test Split</h3>
+
+<p>If you evaluate on the data you trained on, you're measuring <em>memorisation</em>, not
+<em>generalisation</em>. Always split your data: train on one portion, evaluate on the held-out
+portion. Typical splits: 80/20 or 70/30.</p>
+
+<div class="intuition">
+A model that achieves 100% train accuracy and 55% test accuracy has overfitted. The gap between
+train and test performance is the clearest signal of overfitting. Reducing model complexity
+(e.g., shallower tree) narrows the gap.
+</div>
+
+<h3>Cross-Validation</h3>
+
+<p>A single train/test split can be noisy &mdash; the result depends on which rows ended up in
+which set. <strong>k-fold cross-validation</strong> is more robust:</p>
+
+<ol>
+  <li>Split data into k equal folds (typically k = 5 or 10).</li>
+  <li>For each fold: train on the other k&minus;1 folds, evaluate on this fold.</li>
+  <li>Average the k scores.</li>
+</ol>
+
+<p>Every data point gets evaluated exactly once. The average is a more stable estimate of
+model performance than any single split. You won't implement this now, but know it exists &mdash;
+it's the standard way to compare models or tune hyperparameters like <code>max_depth</code>.</p>
+
+<hr>
+
+<h2>When NOT to Use Gradient Descent</h2>
+
+<p>This is the gate. After building linreg, logreg, and now a decision tree, you should be
+able to look at a problem and pick the right family of tools:</p>
+
+<table>
+<tr><th>Situation</th><th>Reach for&hellip;</th><th>Why</th></tr>
+<tr>
+  <td>Continuous features, linear relationship, predicting a number</td>
+  <td>Linear regression (GD)</td>
+  <td>Simple, fast, interpretable; GD finds the optimal weights</td>
+</tr>
+<tr>
+  <td>Continuous features, binary classification, linear boundary</td>
+  <td>Logistic regression (GD)</td>
+  <td>Same engine as linreg with sigmoid; finds the best hyperplane</td>
+</tr>
+<tr>
+  <td>Non-linear boundary, mixed/categorical features, need interpretability</td>
+  <td>Decision tree</td>
+  <td>No differentiability needed; handles XOR-type patterns; human-readable</td>
+</tr>
+<tr>
+  <td>Small dataset, similarity matters, quick baseline</td>
+  <td>k-NN</td>
+  <td>No training, instant setup; limited by dataset size at prediction time</td>
+</tr>
+<tr>
+  <td>No labels, looking for structure</td>
+  <td>k-means / PCA</td>
+  <td>Unsupervised; finds groups (k-means) or reduces dimensions (PCA)</td>
+</tr>
+<tr>
+  <td>Binary classification, clear margin, many features</td>
+  <td>SVM</td>
+  <td>Maximum margin; kernel trick handles non-linear; strong in high dimensions</td>
+</tr>
+<tr>
+  <td>Lots of data, complex patterns, willing to lose interpretability</td>
+  <td>Neural network (Milestone 4+)</td>
+  <td>GD on steroids: learns its own features via backprop. You'll build this next.</td>
+</tr>
+</table>
+
+<div class="warning">
+Gradient descent assumes a differentiable loss over continuous parameters. Decision trees
+assume nothing about the loss shape &mdash; they work by exhaustive search over splits.
+That's why they complement each other: gradient descent is efficient when its assumptions
+hold; decision trees are robust when they don't.
+</div>
+
+<hr>
+
+<h2>Check Your Understanding</h2>
+
+<div class="quiz" id="q1">
+<h3>Question 1: Compute Entropy</h3>
+<p>A set has 6 elements: 4 of class A, 2 of class B. What is the entropy?</p>
+<label><input type="radio" name="q1" value="a"> H = 0</label>
+<label><input type="radio" name="q1" value="b"> H &approx; 0.918</label>
+<label><input type="radio" name="q1" value="c"> H = 1.0</label>
+<label><input type="radio" name="q1" value="d"> H &approx; 0.650</label>
+<button onclick="checkQuiz('q1','b',
+  'Correct. p_A = 4/6 = 2/3, p_B = 2/6 = 1/3. H = &minus;(2/3 &middot; log₂(2/3) + 1/3 &middot; log₂(1/3)) = &minus;(2/3 &middot; (&minus;0.585) + 1/3 &middot; (&minus;1.585)) = &minus;(&minus;0.390 + (&minus;0.528)) = 0.918.',
+  'Compute: p_A = 4/6, p_B = 2/6. Plug into H = &minus;&Sigma; p_i log₂(p_i).')">
+  Check</button>
+<div class="feedback" id="q1-feedback"></div>
+</div>
+
+<div class="quiz" id="q2">
+<h3>Question 2: Trees vs. Linear Models</h3>
+<p>Why can a decision tree learn XOR (output 1 when exactly one input is 1) but logistic
+regression cannot?</p>
+<label><input type="radio" name="q2" value="a"> Decision trees have more parameters</label>
+<label><input type="radio" name="q2" value="b"> XOR is not linearly separable &mdash; no single hyperplane can divide the classes. A tree makes two axis-aligned cuts.</label>
+<label><input type="radio" name="q2" value="c"> Logistic regression can't handle binary features</label>
+<button onclick="checkQuiz('q2','b',
+  'Exactly. XOR\'s positive examples (0,1) and (1,0) sit on opposite corners of the unit square, with negatives (0,0) and (1,1) on the other corners. No straight line separates them. A decision tree splits first on one feature, then on the other within each partition &mdash; two axis-aligned cuts solve it.',
+  'Think about what the decision boundary looks like for XOR. Can you draw a single straight line that separates (0,1),(1,0) from (0,0),(1,1)?')">
+  Check</button>
+<div class="feedback" id="q2-feedback"></div>
+</div>
+
+<div class="quiz" id="q3">
+<h3>Question 3: Evaluation Trap</h3>
+<p>Your decision tree gets 98% train accuracy and 52% test accuracy. What's happening, and
+what should you try?</p>
+<label><input type="radio" name="q3" value="a"> The test set is too small; collect more test data</label>
+<label><input type="radio" name="q3" value="b"> The model is overfitting; reduce max_depth to lower complexity</label>
+<label><input type="radio" name="q3" value="c"> The model is underfitting; increase max_depth for more capacity</label>
+<button onclick="checkQuiz('q3','b',
+  'Right. A large gap between train and test accuracy is the hallmark of overfitting. The tree memorised the training data (98%) but doesn\'t generalise (52%). Reducing max_depth forces simpler splits, which may sacrifice some train accuracy but should improve test accuracy. Cross-validation helps find the sweet spot.',
+  'A gap between train and test performance means the model learned something specific to the training set. Is that too much capacity or too little?')">
+  Check</button>
+<div class="feedback" id="q3-feedback"></div>
+</div>
+
+<div class="quiz" id="q4">
+<h3>Question 4: Algorithm Selection</h3>
+<p>You have a dataset of 50 customer records with 3 features. You want to find natural groupings
+but have no labels. Which algorithm?</p>
+<label><input type="radio" name="q4" value="a"> Logistic regression</label>
+<label><input type="radio" name="q4" value="b"> k-Nearest Neighbors</label>
+<label><input type="radio" name="q4" value="c"> k-Means clustering</label>
+<label><input type="radio" name="q4" value="d"> Decision tree</label>
+<button onclick="checkQuiz('q4','c',
+  'Correct. No labels means unsupervised learning. k-Means finds natural groups without needing a target variable. The other three all require labels (supervised learning). PCA could also work here for visualisation, but k-Means is the direct answer for finding groups.',
+  'Which of these algorithms works without labels?')">
+  Check</button>
+<div class="feedback" id="q4-feedback"></div>
+</div>
+
+<hr>
+
+<div class="next-step">
+<h3>Code Exercise: crates/dtree</h3>
+<p>The scaffold is in <code>crates/dtree/src/lib.rs</code> with stubs and 9 failing tests.
+Implement in this order:</p>
+<ol>
+  <li><code>entropy(labels)</code> &mdash; count class proportions, apply the formula with <code>f64::log2()</code></li>
+  <li><code>information_gain(parent, left, right)</code> &mdash; entropy of parent minus weighted child entropies</li>
+  <li><code>precision(predicted, actual)</code> and <code>recall(predicted, actual)</code> &mdash; count TP/FP/FN</li>
+  <li><code>train_test_split(x, y, ratio)</code> &mdash; split matrices at a row boundary</li>
+  <li><code>predict_one(features)</code> &mdash; walk the tree with <code>match</code> on <code>Node</code></li>
+  <li><code>predict(x)</code> &mdash; extract each row, call predict_one</li>
+  <li><code>fit(x, y, max_depth)</code> &mdash; the CART algorithm, recursive helper, the big one</li>
+</ol>
+<p>The XOR test (<code>fit_learns_xor</code>) is the gate: it proves your tree handles a
+problem that gradient descent cannot.</p>
+<p style="margin-top: 0.8rem; color: var(--dim);">Run <code>cargo test -p dtree</code> as you go.
+If something's unclear, ask &mdash; that's what the agent is for.</p>
+</div>
+
+<script>
+function checkQuiz(id, correct, rightMsg, wrongMsg) {
+  const selected = document.querySelector(`input[name="${id}"]:checked`);
+  const fb = document.getElementById(`${id}-feedback`);
+  if (!selected) return;
+  fb.style.display = 'block';
+  if (selected.value === correct) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = rightMsg;
+  } else {
+    fb.className = 'feedback wrong';
+    fb.innerHTML = wrongMsg;
+  }
+}
+</script>
+
+</body>
+</html>
